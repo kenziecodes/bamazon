@@ -15,38 +15,78 @@ var connection = mysql.createConnection({
     password: "root",
     database: "bamazon"
 });
-
+// run the start function after the connection is made to prompt the user
+start();
 // connect to the mysql server and sql database
-connection.query("SELECT * FROM products", 
-function (err, res) {
-    if (err) {
-        throw err;
-    }
-    console.log("-----------------------------");
-    for(var i = 0; i< res.length; i++){
-        console.log(res[i].id, res[i].product_name, res[i].price.toFixed(2));
-    }
-    console.log("-----------------------------");
-    // run the start function after the connection is made to prompt the user
-    // start();
-});
 
-// function start() {
-//     inquirer
-//         .prompt({
+    // 5. Then create a Node application called `bamazonCustomer.js`. Running this application will first display all of the items available for sale. Include the ids, names, and prices of products for sale.
+    
+    // 6. The app should then prompt users with two messages.
 
-//         })
+    //    * The first should ask them the ID of the product they would like to buy.
+    //    * The second message should ask how many units of the product they would like to buy.
+function start() {
+    connection.query("SELECT * FROM products",
+    function (err, sqlResponse) {
+        if (err) {
+            throw err;
+        }
+        console.log("-----------------------------");
+        for (var i = 0; i < sqlResponse.length; i++) {
+            console.log(sqlResponse[i].id, sqlResponse[i].product_name, sqlResponse[i].price.toFixed(2), 'QTY:' + sqlResponse[i].stock_quantity);
+        }
+        console.log("-----------------------------");
+        
+   
+    inquirer
+        .prompt([{
+            type: "input",
+            name: "itemId",
+            message: "What is the ID of the item you would like?",
+            
+        },
+        {
+            type: "input",
+            name: "itemQuantity",
+            message: "How many of this item you would like?"
+        }
 
-// }
+        ]).then(response =>{
+            //console.log(response, allItems);
+            var itemWeWantBetter = sqlResponse.filter(function(item){
+                return item.id === +response.itemId;
+            });
 
-// 5. Then create a Node application called `bamazonCustomer.js`. Running this application will first display all of the items available for sale. Include the ids, names, and prices of products for sale.
+            if(itemWeWantBetter.length === 0) {
+                console.log('That Id does not exist')
+                start();
+            }
+            else {
+                //we have a valid ID and now we hsould an array with one item in it;
+                var ourItem = itemWeWantBetter.pop();
+                if(ourItem.stock_quantity >= +response.itemQuantity){
+                        //We have enough quantity we hsould adjust database and respond tot he user with their total cost
+                        console.log('we should update data base and give feedbakc to user');
+                }
+                else {
+                        //oops not enough quantity we need to do this again.
+                        console.log('Sorry not enough quantity');
+                        start();
+                }
+            }
+            
 
-// 6. The app should then prompt users with two messages.
+            console.log(ourItem);
+        }).catch(err => {
+            console.log(err);
+        })
+    });
 
-//    * The first should ask them the ID of the product they would like to buy.
-//    * The second message should ask how many units of the product they would like to buy.
+}
+
 
 // 7. Once the customer has placed the order, your application should check if your store has enough of the product to meet the customer's request.
+
 
 //    * If not, the app should log a phrase like `Insufficient quantity!`, and then prevent the order from going through.
 
